@@ -13,17 +13,24 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
-Route::get('/register',function(){
-    return view('/auth/register');
-});
 
-Route::get('/login',function(){
-    return view('/auth/login');
-});
+use App\Http\Controllers\UserController;
 
-Route::get('/otpverify',function(){
-    return view('/auth/varifyOTP');
-});
+Route::get('/register', [UserController::class, 'showRegisterForm'])->name('register');
+Route::post('/register', [UserController::class, 'register']);
+
+Route::get('/login', [UserController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [UserController::class, 'login']);
+
+Route::get('/verify-otp', [UserController::class, 'showOtpForm'])->name('verify.otp');
+Route::post('/verify-otp', [UserController::class, 'verifyOtp'])->name('verify.otp');
+
+// Add resend OTP route
+Route::post('/resend-otp', [UserController::class, 'resendOtp'])->name('resend.otp');
+
+// Test email route - for debugging Brevo configuration
+Route::get('/test-email', [UserController::class, 'testEmail'])->name('test.email');
+
+Route::get('/home', [UserController::class, 'home'])->name('home')->middleware('auth');
+
+Route::get('/logout', [UserController::class, 'logout'])->name('logout');
