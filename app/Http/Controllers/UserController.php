@@ -12,17 +12,16 @@ use Illuminate\Support\Facades\Log; // Added for debugging
 
 class UserController extends Controller
 {
-    // ============================
-    // Show Register Form
-    // ============================
+    
+    // !Show Register Form
+   
     public function showRegisterForm()
     {
         return view('auth.register');
     }
 
-    // ============================
-    // Register User + Send OTP
-    // ============================
+    //! Register User + Send OTP
+
     public function register(Request $request)
     {
         $request->validate([
@@ -32,6 +31,7 @@ class UserController extends Controller
         ]);
 
         // Create User
+        //here user is model name and in that model we create user and pass to register function
         $user = User::create([
             'name'   => $request->name,
             'email'  => $request->email,
@@ -52,7 +52,8 @@ class UserController extends Controller
             'otp' => $user->otp,
             'sender_email' => $senderEmail
         ]);
-
+        //we are sending this repsonse to brevo email service
+        //ye response ka data ham send kr rhe hai post se brevo ko 
         $response = Http::withHeaders([
             'accept' => 'application/json',
             'api-key' => $brevoApiKey,
@@ -62,9 +63,10 @@ class UserController extends Controller
             'sender' => ['name' => $senderName, 'email' => $senderEmail],
             'to' => [[ 'name' => $user->name, 'email' => $user->email ]],
             'subject' => 'Your OTP for Registration',
+            //this is email we are sending to user
             'htmlContent' => "<h1>Your OTP Code is</h1> <h2>{$user->otp}</h2><p>This OTP will expire in 10 minutes.</p>",
         ]);
-
+        //this is for error handling. it check that reponse come or not
         Log::info('Brevo API Response', [
             'status' => $response->status(),
             'body' => $response->body()
@@ -90,31 +92,37 @@ class UserController extends Controller
         }
     }
 
-    // ============================
-    // Show Login
-    // ============================
+
+    //! Show Login
+  =
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
-    // ============================
-    // Login Check + OTP Check
-    // ============================
+   
+    //! Login Check + OTP Check
+    
     public function login(Request $request)
     {
+        //check form input here are right or not
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
-
+        //find user by email like it check register page email and if then use
+        //Model::where('column', $value)->first(); syntax
         $user = User::where('email',$request->email)->first();
 
+
+         // NOTE:Hash::check(plain_password, hashed_password_from_db); syntax
         if(!$user || !Hash::check($request->password, $user->password))
         {
             return back()->withErrors(['email' => 'Invalid Credentials']);
         }
 
+
+        //!if user is not varified then this if loop run
         if(!$user->email_verified_at)
         {
             // Generate a new OTP for login
@@ -140,22 +148,28 @@ class UserController extends Controller
                 ->withErrors(['otp' => 'Check your email, we sent an OTP. If not received click "Resend OTP".']);
         }
 
+        //?inbuild Auth::login($user);
+        // ?This means:
+        // ?✔ Logs the user into the application
+        // ?✔ Stores user details in the session
+        // ?✔ Creates an authenticated session for that user
+        // ?✔ The user is now "logged in" until logout or session expires
         Auth::login($user);
 
         return redirect()->route('home');
     }
 
-    // ============================
-    // Show OTP Verify Page
-    // ============================
+   
+    // !Show OTP Verify Page
+   
     public function showOtpForm()
     {
         return view('auth.verify-otp');
     }
 
-    // ============================
-    // Verify OTP
-    // ============================
+  
+    //! Verify OTP
+  
     public function verifyOtp(Request $request)
     {
         $request->validate(['otp' => 'required']);
@@ -186,9 +200,9 @@ class UserController extends Controller
         return redirect()->route('home')->with('success','OTP Verified Successfully!');
     }
 
-    // ============================
-    // Send OTP Email (Reusable function)
-    // ============================
+
+    // !Send OTP Email (Reusable function)
+
     public function sendOtpEmail($user)
     {
         $brevoApiKey = env('BREVO_API_KEY');
@@ -223,9 +237,9 @@ class UserController extends Controller
         return $response->successful();
     }
 
-    // ============================
-    // Resend OTP
-    // ============================
+   
+    // !Resend OTP
+   
     public function resendOtp(Request $request)
     {
         $email = session('otp_email');
@@ -255,9 +269,9 @@ class UserController extends Controller
         }
     }
 
-    // ============================
-    // Test Brevo Email Function
-    // ============================
+  
+    // !Test Brevo Email Function
+
     public function testEmail()
     {
         // This is a test function to verify Brevo is working
